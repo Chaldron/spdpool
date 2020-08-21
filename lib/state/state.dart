@@ -6,6 +6,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'state.g.dart';
 
 /// A representation of the app state.
+@immutable
 class AppState {
   /// A list of players.
   final List<Player> players;
@@ -22,15 +23,15 @@ class AppState {
       this.subscriptions = const []});
 }
 
+/// A representation of a single player.
 @immutable
 @JsonSerializable(nullable: false)
-
-/// A representation of a single player.
 class Player {
   /// The name of this player.
   final String name;
 
   /// The elo ranking of this player.
+  @JsonKey(ignore: true)
   final double ranking;
 
   const Player({this.name, this.ranking});
@@ -42,10 +43,10 @@ class Player {
 /// A representation of a match winner.
 enum MatchWinner { Player1, Player2 }
 
-@immutable
-@JsonSerializable(nullable: false)
 
 /// A representation of a single match.
+@immutable
+@JsonSerializable(nullable: false)
 class Match {
   /// The first player in this match.
   final Player player1;

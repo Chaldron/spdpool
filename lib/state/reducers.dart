@@ -6,27 +6,36 @@ import 'package:spd_pool/state/state.dart';
 /// Creates the root reducer, combining all other reducers.
 AppState rootReducer(AppState state, action) {
   return AppState(
-      players: playerReducer()(state.players, action),
+      players: _playerReducer()(state.players, action),
       matches: state.matches,
       subscriptions: subscriptionReducer()(state.subscriptions, action));
 }
 
-/// Creates the player reducers, combining all other player reducers.
-List<Player> Function(List<Player> players, dynamic action) playerReducer() {
-  return combineReducers<List<Player>>(
-      [TypedReducer<List<Player>, AddPlayerAction>(_addPlayerReducer)]);
+// -- Player Reducers
+
+/// Creates the root player reducer, combining all other player reducers.
+List<Player> Function(List<Player> players, dynamic action) _playerReducer() {
+  return combineReducers<List<Player>>([
+    TypedReducer<List<Player>, SetPlayersAction>(_setPlayersReducer),
+    TypedReducer<List<Player>, ComputePlayerRankingsAction>(
+        _computePlayerRankings)
+  ]);
 }
 
-/// Reducer to add a player.
-List<Player> _addPlayerReducer(List<Player> players, AddPlayerAction action) {
-  return List.from(players)..add(action.player);
+/// Reducer to set the list of players.
+List<Player> _setPlayersReducer(List<Player> players, SetPlayersAction action) {
+  return action.players;
 }
 
 /// Reducer to compute player rankings.
 List<Player> _computePlayerRankings(
     List<Player> players, ComputePlayerRankingsAction action) {
-  return List.from(players);
+  return List.from(players
+      .map((player) => Player(name: player.name, ranking: 100))
+      .toList());
 }
+
+// -- Subscription Reducers
 
 /// Creates all subscription reducers, combining all other subscription reducers.
 List<StreamSubscription> Function(

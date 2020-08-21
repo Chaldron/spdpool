@@ -5,26 +5,29 @@ import 'package:spd_pool/state/state.dart';
 
 // -- Player Actions
 
+/// An action to register a new player.
 @immutable
-
-/// An action to add a player to the store.
-class AddPlayerAction {
+class RegisterPlayerAction {
   final Player player;
 
-  AddPlayerAction(this.player);
+  RegisterPlayerAction(this.player);
 }
 
-/// An action to create a new player.
-class CreatePlayerAction {
-  final Player player;
-
-  CreatePlayerAction(this.player);
-}
-
+/// An action to set the list of players.
 @immutable
+class SetPlayersAction {
+  final List<Player> players;
+
+  SetPlayersAction(this.players);
+}
 
 /// An action to (re)compute player rankings.
-class ComputePlayerRankingsAction {}
+@immutable
+class ComputePlayerRankingsAction {
+  final List<Match> matches;
+
+  ComputePlayerRankingsAction(this.matches);
+}
 
 // -- Subscription Actions
 

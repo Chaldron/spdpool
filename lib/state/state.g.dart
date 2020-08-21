@@ -9,13 +9,11 @@ part of 'state.dart';
 Player _$PlayerFromJson(Map<String, dynamic> json) {
   return Player(
     name: json['name'] as String,
-    ranking: (json['ranking'] as num).toDouble(),
   );
 }
 
 Map<String, dynamic> _$PlayerToJson(Player instance) => <String, dynamic>{
       'name': instance.name,
-      'ranking': instance.ranking,
     };
 
 Match _$MatchFromJson(Map<String, dynamic> json) {
