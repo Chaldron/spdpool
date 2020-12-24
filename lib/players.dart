@@ -1,43 +1,57 @@
 import 'package:flutter/material.dart';
+/**
+ * players.dart
+ * 
+ * This file contains the "Players" screen, where users 
+ * can add, update, and view the different players.
+ */
+
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:spd_pool/state/actions.dart';
 import 'package:spd_pool/state/state.dart';
 
-/// The view model for the players screen.
-@immutable
-class PlayersModel {
-  final List<Player> players;
-  final void Function(Player player) createPlayer;
-
-  const PlayersModel({this.players, this.createPlayer});
-}
-
 /// A single Player's card display.
-class PlayerCard extends StatelessWidget {
-  final Player player;
+class _PlayerCard extends StatelessWidget {
+  /// The player this card is displaying.
+  final Player _player;
 
-  PlayerCard(this.player);
+  /// This player's relative rank.
+  final int _relativeRank;
+
+  _PlayerCard(this._player, this._relativeRank);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 100,
       child: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Card(
-              child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        player.name,
-                        style: TextStyle(fontSize: 30.0),
-                      ),
-                      Text(player.ranking.toString(),
-                          style: TextStyle(fontSize: 30.0))
-                    ],
-                  )))),
+        padding: EdgeInsets.all(8.0),
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Relative rank
+                Text(
+                  _relativeRank.toString(),
+                  style: TextStyle(fontSize: 30.0, color: Colors.grey),
+                ),
+                // Player name
+                Text(
+                  _player.name,
+                  style: TextStyle(fontSize: 30.0),
+                ),
+                // Actual ranking
+                Text(
+                  _player.ranking.toInt().toString(),
+                  style: TextStyle(fontSize: 30.0),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -47,11 +61,27 @@ class NewPlayerDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       child: Column(
-        children: [FlatButton(onPressed: () => Navigator.pop(context),)],
-      )
+        children: [
+          TextField(
+            decoration: InputDecoration(hintText: "Name"),
+          ),
+          FlatButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Add"),
+          ),
+        ],
+      ),
     );
   }
+}
 
+/// The view model for the players screen.
+@immutable
+class _PlayersModel {
+  final List<Player> players;
+  final void Function(Player player) createPlayer;
+
+  const _PlayersModel({this.players, this.createPlayer});
 }
 
 /// The players screen.
@@ -60,16 +90,18 @@ class PlayersDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<AppState, PlayersModel>(
-        converter: (store) => PlayersModel(
-            players: store.state.players,
-            createPlayer: (player) =>
-                store.dispatch(RegisterPlayerAction(player))),
+    return StoreConnector<AppState, _PlayersModel>(
+        converter: (store) => _PlayersModel(
+              players: store.state.players,
+              createPlayer: (player) => store.dispatch(
+                RegisterPlayerAction(player),
+              ),
+            ),
         builder: (context, model) {
           return Scaffold(
               floatingActionButton: FloatingActionButton(
                 onPressed: () {
-                  showDialog(child: NewPlayerDialog());
+                  showDialog(context: context, child: NewPlayerDialog());
                 },
                 child: Icon(Icons.add),
                 backgroundColor: Colors.redAccent,
@@ -77,7 +109,8 @@ class PlayersDisplay extends StatelessWidget {
               body: ListView(
                   scrollDirection: Axis.vertical,
                   children: model.players
-                      .map((player) => PlayerCard(player))
+                      .map((player) => _PlayerCard(
+                          player, model.players.indexOf(player) + 1))
                       .toList()));
         });
   }

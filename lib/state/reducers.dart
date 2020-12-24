@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:redux/redux.dart';
 import 'package:spd_pool/state/actions.dart';
 import 'package:spd_pool/state/state.dart';
@@ -30,9 +31,12 @@ List<Player> _setPlayersReducer(List<Player> players, SetPlayersAction action) {
 /// Reducer to compute player rankings.
 List<Player> _computePlayerRankings(
     List<Player> players, ComputePlayerRankingsAction action) {
-  return List.from(players
-      .map((player) => Player(name: player.name, ranking: 100))
+  List<Player> rankedPlayers = List.from(players
+      .map((player) => Player(
+          name: player.name, ranking: new Random().nextInt(3000).toDouble()))
       .toList());
+  rankedPlayers.sort((p1, p2) => p2.ranking.compareTo(p1.ranking));
+  return rankedPlayers;
 }
 
 // -- Subscription Reducers

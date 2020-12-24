@@ -22,7 +22,7 @@ Middleware<AppState> createPlayer() {
     // Add a new player to the Firestore collection.
     Firestore.instance
         .collection(Constants.FIREBASE_PLAYERS_COLLECTION)
-        .add(action.player.toJson());
+        .add(action._player.toJson());
     // Recompute player rankings.
     store.dispatch(ComputePlayerRankingsAction(store.state.matches));
     next(action);
@@ -58,6 +58,7 @@ Middleware<AppState> createPlayersSubscription() {
 Middleware<AppState> cancelSubscriptions() {
   return (Store<AppState> store, action, NextDispatcher next) async {
     // Cancel every Firestore subscription.
+    print("cancelling");
     store.state.subscriptions.forEach((subscription) => subscription.cancel());
     next(action);
   };

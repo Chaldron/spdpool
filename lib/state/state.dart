@@ -9,6 +9,7 @@ part 'state.g.dart';
 @immutable
 class AppState {
   /// A list of players.
+  /// Guaranteed  to be sorted by ranking.
   final List<Player> players;
 
   /// A list of matches.
@@ -17,10 +18,11 @@ class AppState {
   /// A list of Firestore subscriptions.
   final List<StreamSubscription> subscriptions;
 
-  const AppState(
-      {this.players = const [],
-      this.matches = const [],
-      this.subscriptions = const []});
+  const AppState({
+    this.players = const [],
+    this.matches = const [],
+    this.subscriptions = const [],
+  });
 }
 
 /// A representation of a single player.
@@ -42,7 +44,6 @@ class Player {
 
 /// A representation of a match winner.
 enum MatchWinner { Player1, Player2 }
-
 
 /// A representation of a single match.
 @immutable
