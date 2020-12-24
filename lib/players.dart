@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 /**
  * players.dart
  * 
@@ -6,7 +5,9 @@ import 'package:flutter/material.dart';
  * can add, update, and view the different players.
  */
 
+import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:spd_pool/constants.dart';
 import 'package:spd_pool/state/actions.dart';
 import 'package:spd_pool/state/state.dart';
 
@@ -27,6 +28,11 @@ class _PlayerCard extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(8.0),
         child: Card(
+          color: ILLINOIS_GREY,
+          shape: RoundedRectangleBorder(
+            side: BorderSide.none,
+            borderRadius: BorderRadius.circular(8.0),
+          ),
           child: Padding(
             padding: EdgeInsets.all(8.0),
             child: Row(
@@ -35,7 +41,7 @@ class _PlayerCard extends StatelessWidget {
                 // Relative rank
                 Text(
                   _relativeRank.toString(),
-                  style: TextStyle(fontSize: 30.0, color: Colors.grey),
+                  style: TextStyle(fontSize: 30.0),
                 ),
                 // Player name
                 Text(
@@ -56,7 +62,8 @@ class _PlayerCard extends StatelessWidget {
   }
 }
 
-class NewPlayerDialog extends StatelessWidget {
+/// The new player full-screen dialog.
+class _NewPlayerDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -101,7 +108,7 @@ class PlayersDisplay extends StatelessWidget {
           return Scaffold(
               floatingActionButton: FloatingActionButton(
                 onPressed: () {
-                  showDialog(context: context, child: NewPlayerDialog());
+                  showDialog(context: context, child: _NewPlayerDialog());
                 },
                 child: Icon(Icons.add),
                 backgroundColor: Colors.redAccent,

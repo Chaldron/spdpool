@@ -40,36 +40,44 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return new StoreProvider(
-        store: store,
-        child: MaterialApp(
-            title: APP_TITLE,
-            theme: ThemeData.dark(),
-            home: new StoreBuilder(
-                // Setup subscriptions to Firebase on initialization
-                onInit: (store) => store.dispatch(RequestSubscriptionsAction()),
-                // Cancel subscriptions to Firebase when closing
-                onDispose: (store) =>
-                    store.dispatch(CancelSubscriptionsAction()),
-                builder: (context, Store<AppState> store) {
-                  // Create the Home widget with three child pages
-                  return Home(title: APP_TITLE, children: [
-                    // New match screen
-                    NavigationPage(
-                        title: 'Play',
-                        icon: Icon(Icons.pool),
-                        body: PlayDisplay()),
-                    // Match history
-                    NavigationPage(
-                        title: 'Matches',
-                        icon: Icon(Icons.history),
-                        body: PlayersDisplay()),
-                    // Players
-                    NavigationPage(
-                        title: 'Players',
-                        icon: Icon(Icons.people),
-                        body: PlayersDisplay())
-                  ]);
-                })));
+      store: store,
+      child: MaterialApp(
+        title: APP_TITLE,
+        theme: ThemeData.dark(),
+        home: new StoreBuilder(
+          // Setup subscriptions to Firebase on initialization
+          onInit: (store) => store.dispatch(RequestSubscriptionsAction()),
+          // Cancel subscriptions to Firebase when closing
+          onDispose: (store) => store.dispatch(CancelSubscriptionsAction()),
+          builder: (context, Store<AppState> store) {
+            // Create the Home widget with three child pages
+            return Home(
+              title: APP_TITLE,
+              children: [
+                // New match screen
+                NavigationPage(
+                  title: 'Play',
+                  icon: Icon(Icons.pool),
+                  body: PlayDisplay(),
+                ),
+                // Match history
+                NavigationPage(
+                  title: 'Matches',
+                  icon: Icon(Icons.history),
+                  body: PlayersDisplay(),
+                ),
+                // Players
+                NavigationPage(
+                  title: 'Players',
+                  icon: Icon(Icons.people),
+                  body: PlayersDisplay(),
+                )
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 

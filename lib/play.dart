@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:spd_pool/state/actions.dart';
+import 'package:spd_pool/constants.dart';
 import 'package:spd_pool/state/state.dart';
 
 /// A single Player's card display.
@@ -15,54 +15,69 @@ class _PlayerCard extends StatelessWidget {
   final bool isSelected;
 
   /// The on tap action for this player
-  void Function() onTap;
+  /// If null, this player cannot be selected.
+  final void Function() onTap;
 
   _PlayerCard({this.player, this.relativeRank, this.isSelected, this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    // Use a grey text color when this player cannot be selected
+    final Color textColor = onTap != null ? Colors.white : Colors.grey;
+    // Show all attributes on large screens, and only name on small ones
+    // This should be updated at some point to be less hacky
+    final MediaQueryData queryData = MediaQuery.of(context);
+    final bool largeScreen = queryData.size.width > 800;
+    // The list of attributes
+    final List<Widget> attributes = [
+      // Relative rank
+      largeScreen
+          ? Text(
+              relativeRank.toString(),
+              style: TextStyle(fontSize: 30.0, color: textColor),
+            )
+          : Spacer(),
+      // Player name
+      Text(
+        player.name,
+        style: TextStyle(fontSize: 30.0, color: textColor),
+      ),
+      // Actual rank
+      largeScreen
+          ? Text(
+              player.ranking.toInt().toString(),
+              style: TextStyle(fontSize: 30.0, color: textColor),
+            )
+          : Spacer()
+    ];
+
     return Container(
       height: 85,
       child: Padding(
         padding: EdgeInsets.all(4.0),
         child: Card(
-          color: Color(0xFF5E6669),
+          // Grey card
+          color: ILLINOIS_GREY,
           shape: RoundedRectangleBorder(
-            side: BorderSide(
-              color: Colors.white,
-              width: isSelected ? 8.00 : 0.01,
-            ),
-            borderRadius: BorderRadius.circular(8),
+            // White border when this player is selected
+            side: isSelected
+                ? BorderSide(color: Colors.white, width: 6.00)
+                : BorderSide.none,
+            borderRadius: BorderRadius.circular(8.0),
           ),
+          // Wrap in material to use InkWell effects
           child: Material(
+            // Don't show any color overlays
             type: MaterialType.transparency,
             child: InkWell(
+              // Pass onTap functionality from state
               onTap: onTap,
               child: Padding(
+                // Pad text within the card
                 padding: EdgeInsets.all(16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Relative rank
-                    Text(
-                      relativeRank.toString(),
-                      style: TextStyle(
-                          fontSize: 30.0,
-                          color: onTap != null ? Colors.white : Colors.grey),
-                    ),
-                    // Player name
-                    Text(
-                      player.name,
-                      style: TextStyle(
-                          fontSize: 30.0,
-                          color: onTap != null ? Colors.white : Colors.grey),
-                    ),
-                    // Actual ranking
-                    Text(player.ranking.toInt().toString(),
-                        style: TextStyle(
-                            fontSize: 30.0,
-                            color: onTap != null ? Colors.white : Colors.grey))
-                  ],
+                  children: attributes,
                 ),
               ),
             ),
@@ -73,35 +88,49 @@ class _PlayerCard extends StatelessWidget {
   }
 }
 
-/// The view model for the matches screen.
-@immutable
-class PlayModel {
+/// The player list state.
+class _PlayersListDisplayState extends State<_PlayersListDisplay> {
+  /// The players we're showing.
   final List<Player> players;
 
-  const PlayModel({this.players});
-}
+  /// The currently selected indices on each side of the selection screen;
+  /// Defaults to -1 so no one is selected from the start.
+  int selectedIndexLeft = -1, selectedIndexRight = -1;
 
-class _PlayersListDisplayState extends State<PlayersListDisplay> {
-  final List<Player> _players;
-  int _selectedIndexLeft = 0, _selectedIndexRight = 0;
+  _PlayersListDisplayState({this.players});
 
-  _PlayersListDisplayState(this._players);
-
-  Widget Function(BuildContext, int) _listItemBuilderBuilder(bool left) {
+  /// Returns a builder for a listview item, given which side that list is on.
+  /// This lets us maintain state across both sides of the list, since we need to
+  /// keep track of which card is selected on both sides.
+  Widget Function(BuildContext, int) listItemBuilderBuilder(bool left) {
     return (BuildContext context, int index) {
-      bool disabled = !((left && index != _selectedIndexRight) ||
-          (!left && index != _selectedIndexLeft));
+      // We should disable a player card if the corresponding card on the other side is selected.
+      bool disabled = !((left && index != selectedIndexRight) ||
+          (!left && index != selectedIndexLeft));
       return _PlayerCard(
-        player: _players[index],
+        player: players[index],
+        // Player is sorted, so rank = index + 1.
         relativeRank: index + 1,
-        isSelected: index == (left ? _selectedIndexLeft : _selectedIndexRight),
+        // Whether or not this player is selected.
+        isSelected: index == (left ? selectedIndexLeft : selectedIndexRight),
+        // On tap action (update selected index on the corresponding side),
+        // only if we're not disabled.
         onTap: !disabled
             ? () {
                 setState(() {
-                  if (left)
-                    _selectedIndexLeft = index;
-                  else
-                    _selectedIndexRight = index;
+                  // Update the corresponding index.
+                  // Allow unselection of player cards.
+                  if (left) {
+                    if (selectedIndexLeft == index)
+                      selectedIndexLeft = -1;
+                    else
+                      selectedIndexLeft = index;
+                  } else {
+                    if (selectedIndexRight == index)
+                      selectedIndexRight = -1;
+                    else
+                      selectedIndexRight = index;
+                  }
                 });
               }
             : null,
@@ -111,48 +140,96 @@ class _PlayersListDisplayState extends State<PlayersListDisplay> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            child: ListView.builder(
-              itemBuilder: _listItemBuilderBuilder(true),
-              itemCount: _players.length,
+    /// The onTap handler for the start button.
+    /// Should be null if two valid players haven't been selected.
+    Function onStartPressed = selectedIndexLeft >= 0 && selectedIndexRight >= 0
+        ? () {
+            print("start");
+          }
+        : null;
+    return Scaffold(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            // The row of list views
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                // Left player list view
+                Expanded(
+                  child: Container(
+                    child: ListView.builder(
+                      itemBuilder: listItemBuilderBuilder(true),
+                      itemCount: players.length,
+                    ),
+                    color: ILLINOIS_ORANGE,
+                  ),
+                ),
+                // Right player list view
+                Expanded(
+                  child: Container(
+                    child: ListView.builder(
+                      itemBuilder: listItemBuilderBuilder(false),
+                      itemCount: players.length,
+                    ),
+                    color: ILLINOIS_BLUE,
+                  ),
+                ),
+              ],
             ),
-            color: Color(0xFFE84A27),
           ),
-        ),
-        Expanded(
-          child: Container(
-            child: ListView.builder(
-              itemBuilder: _listItemBuilderBuilder(false),
-              itemCount: _players.length,
-            ),
-            color: Color(0xFF13294B),
-          ),
-        )
-      ],
+          // Start button
+          Container(
+              height: 70,
+              padding: EdgeInsets.all(8.0),
+              child: RaisedButton(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onPressed: onStartPressed,
+                child: Text(
+                  "Start",
+                  style: TextStyle(fontSize: 22.0),
+                ),
+              )),
+        ],
+      ),
     );
   }
 }
 
-class PlayersListDisplay extends StatefulWidget {
-  final List<Player> _players;
+/// The player list widget.
+class _PlayersListDisplay extends StatefulWidget {
+  final List<Player> players;
 
-  PlayersListDisplay(this._players);
+  _PlayersListDisplay({this.players, Key key}) : super(key: key);
   @override
-  State<StatefulWidget> createState() {
-    return _PlayersListDisplayState(_players);
+  State<_PlayersListDisplay> createState() {
+    return _PlayersListDisplayState(players: players);
   }
 }
 
+/// The view model for the play screen.
+@immutable
+class _PlayModel {
+  /// The players we're showing.
+  final List<Player> players;
+
+  _PlayModel({this.players});
+}
+
+/// The play screen.
 class PlayDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<AppState, PlayModel>(
-      converter: (store) => PlayModel(players: store.state.players),
+    print("building");
+    return StoreConnector<AppState, _PlayModel>(
+      converter: (store) => _PlayModel(players: store.state.players),
       builder: (context, model) {
-        return PlayersListDisplay(model.players);
+        return _PlayersListDisplay(players: model.players, key: UniqueKey());
       },
     );
   }
