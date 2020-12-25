@@ -1,9 +1,4 @@
-import 'dart:async';
-import 'dart:math';
-import 'package:redux/redux.dart';
-import 'package:spd_pool/state/actions.dart';
-import 'package:spd_pool/state/state.dart';
-
+/*
 /// Creates the root reducer, combining all other reducers.
 AppState rootReducer(AppState state, action) {
   return AppState(
@@ -67,3 +62,4 @@ List<StreamSubscription> _deleteSubscriptionsReducer(
     List<StreamSubscription> subscriptions, DeleteSubscriptionsAction action) {
   return List.empty();
 }
+*/

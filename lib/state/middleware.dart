@@ -1,9 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:spd_pool/state/actions.dart';
-import 'package:redux/redux.dart';
-import 'package:spd_pool/state/state.dart';
-import 'package:spd_pool/constants.dart' as constants;
-
+/*
 /// Creates the root middleware, combining all other middleware.
 List<Middleware<AppState>> rootMiddleware() {
   return [
@@ -65,3 +60,4 @@ Middleware<AppState> cancelSubscriptions() {
     next(action);
   };
 }
+*/

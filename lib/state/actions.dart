@@ -1,56 +1,103 @@
 import 'dart:async';
+import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+import 'package:async_redux/async_redux.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spd_pool/state/state.dart';
+
+const String _PLAYERS_COLLECTION = 'players';
 
 // -- Player Actions
 
 /// An action to register a new player.
-@immutable
-class RegisterPlayerAction {
+class RegisterPlayerAction extends ReduxAction<AppState> {
   final Player player;
 
-  RegisterPlayerAction(this.player);
+  RegisterPlayerAction({this.player});
+
+  @override
+  Future<AppState> reduce() async {
+    // Add this player to the Firestore database.
+    // They should automatically appear in the player list due to the one-way binding.
+    await Firestore.instance
+        .collection(_PLAYERS_COLLECTION)
+        .add(player.toJson());
+
+    return null;
+  }
+
+  @override
+  void after() {
+    // Update rankings after adding a new player
+    store.dispatch(
+      ComputePlayerRankingsAction(),
+    );
+  }
 }
 
 /// An action to set the list of players.
-@immutable
-class SetPlayersAction {
+class SetPlayersAction extends ReduxAction<AppState> {
   final List<Player> players;
 
   SetPlayersAction(this.players);
+
+  @override
+  AppState reduce() {
+    return state.copyWith(
+      playerState: state.playerState.copyWith(
+        players: players,
+      ),
+    );
+  }
 }
 
 /// An action to (re)compute player rankings.
-@immutable
-class ComputePlayerRankingsAction {
-  final List<Match> matches;
-
-  ComputePlayerRankingsAction(this.matches);
+class ComputePlayerRankingsAction extends ReduxAction<AppState> {
+  @override
+  AppState reduce() {
+    final rankedPlayers = List.from(state.playerState.players)
+        .map<Player>((player) => Player(
+            name: player.name, ranking: Random().nextInt(3000).toDouble()))
+        .toList();
+    rankedPlayers.sort((p1, p2) => p2.ranking.compareTo(p1.ranking));
+    return state.copyWith(
+      playerState: state.playerState.copyWith(
+        players: rankedPlayers,
+      ),
+    );
+  }
 }
 
 // -- Subscription Actions
 
-@immutable
-
 /// An action to initialize all Firestore subscriptions.
-class RequestSubscriptionsAction {}
+class RequestSubscriptionsAction extends ReduxAction<AppState> {
+  static StreamSubscription<QuerySnapshot> _playerSubscription;
 
-@immutable
-
-/// An action to add a subscription to the store.
-class AddSubscriptionAction {
-  final StreamSubscription subscription;
-
-  AddSubscriptionAction(this.subscription);
+  @override
+  AppState reduce() {
+    // Create the players subscription
+    _playerSubscription = Firestore.instance
+        .collection(_PLAYERS_COLLECTION)
+        .snapshots()
+        .listen((snapshot) {
+      // Create the player objects from the collection
+      final players = snapshot.documents
+          .map((document) => Player.fromJson(document.data))
+          .toList();
+      // Set our list of players and computer rankings
+      store.dispatch(SetPlayersAction(players));
+      store.dispatch(ComputePlayerRankingsAction());
+    });
+    return null;
+  }
 }
 
-@immutable
-
 /// An action to cancel (i.e. disconnect) all subscriptions.
-class CancelSubscriptionsAction {}
-
-@immutable
-
-/// An action to delete (i.e. remove) all subscriptions from the store.
-class DeleteSubscriptionsAction {}
+class CancelSubscriptionsAction extends ReduxAction<AppState> {
+  @override
+  AppState reduce() {
+    RequestSubscriptionsAction._playerSubscription?.cancel();
+    return null;
+  }
+}

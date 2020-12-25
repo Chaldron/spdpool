@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_redux/flutter_redux.dart';
-import 'package:redux/redux.dart';
+import 'package:async_redux/async_redux.dart';
+
 import 'package:spd_pool/play.dart';
 import 'package:spd_pool/players.dart';
 import 'package:spd_pool/state/actions.dart';
-import 'package:spd_pool/state/middleware.dart';
-import 'package:spd_pool/state/reducers.dart';
 import 'package:spd_pool/state/state.dart';
 
-const APP_TITLE = 'SPD Pool';
+/// The redux store.
+Store<AppState> store;
 
 void main() {
+  // Initialize the redux store.
+  store = Store<AppState>(initialState: const AppState());
+  // Start the ap.
   runApp(App());
 }
 
@@ -28,80 +30,6 @@ class NavigationPage {
   final Widget body;
 
   const NavigationPage({this.title, this.icon, this.body});
-}
-
-/// Holds the overall state of the application.
-/// Connects the app to the Redux store.
-class _AppState extends State<App> {
-  /// A redux store with the appropiate reducer, initial state, and middleware.
-  final store = Store<AppState>(rootReducer,
-      initialState: const AppState(), middleware: rootMiddleware());
-
-  @override
-  Widget build(BuildContext context) {
-    return StoreProvider(
-      store: store,
-      child: MaterialApp(
-        title: APP_TITLE,
-        theme: ThemeData.dark(),
-        home: StoreBuilder(
-          // Setup subscriptions to Firebase on initialization
-          onInit: (store) => store.dispatch(RequestSubscriptionsAction()),
-          // Cancel subscriptions to Firebase when closing
-          onDispose: (store) => store.dispatch(CancelSubscriptionsAction()),
-          builder: (context, Store<AppState> store) {
-            // Create the Home widget with three child pages
-            return Home(
-              title: APP_TITLE,
-              children: [
-                // New match screen
-                NavigationPage(
-                  title: 'Play',
-                  icon: const Icon(Icons.pool),
-                  body: PlayDisplay(),
-                ),
-                // Match history
-                NavigationPage(
-                  title: 'Matches',
-                  icon: const Icon(Icons.history),
-                  body: PlayersDisplay(),
-                ),
-                // Players
-                NavigationPage(
-                  title: 'Players',
-                  icon: const Icon(Icons.people),
-                  body: PlayersDisplay(),
-                )
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-/// The actual main app widget.
-class App extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() => _AppState();
-}
-
-/// A main app body widget.
-/// Retains a set of children pages (widgets)
-class Home extends StatefulWidget {
-  /// Title of the main app body
-  final String title;
-
-  /// Child navigation pages
-  final List<NavigationPage> children;
-
-  const Home({Key key, this.title, this.children}) : super(key: key);
-
-  @override
-  State<StatefulWidget> createState() {
-    return _HomeState(title: title, children: children);
-  }
 }
 
 /// Represents the state of the main app body.
@@ -139,6 +67,77 @@ class _HomeState extends State<Home> {
                 BottomNavigationBarItem(label: child.title, icon: child.icon);
             return bottomNavigationBarItem;
           }).toList()),
+    );
+  }
+}
+
+/// A main app body widget.
+/// Retains a set of children pages (widgets)
+class Home extends StatefulWidget {
+  /// Title of the main app body
+  final String title;
+
+  /// Child navigation pages
+  final List<NavigationPage> children;
+
+  const Home({Key key, this.title, this.children}) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() {
+    return _HomeState(title: title, children: children);
+  }
+}
+
+/// Dummy state for our app to use the StoreConnector.
+class _AppState {}
+
+/// Holds the overall state of the application.
+/// Connects the app to the Redux store.
+class App extends StatelessWidget {
+  static const APP_TITLE = 'SPD Pool';
+  @override
+  Widget build(BuildContext context) {
+    return StoreProvider(
+      store: store,
+      child: MaterialApp(
+        title: APP_TITLE,
+        theme: ThemeData.dark(),
+        // Have to use StoreConnector here since async_redux doesn't provide
+        // a StoreBuilder which simply refreshes on the entire store.
+        home: StoreConnector<AppState, _AppState>(
+          // Setup subscriptions to Firebase on initialization
+          onInit: (store) => store.dispatch(RequestSubscriptionsAction()),
+          // Cancel subscriptions to Firebase when closing
+          onDispose: (store) => store.dispatch(CancelSubscriptionsAction()),
+          // Dummy state
+          converter: (store) => _AppState(),
+          builder: (context, _) {
+            return Home(
+              title: APP_TITLE,
+              children: [
+                // New match screen
+                NavigationPage(
+                  title: 'Play',
+                  icon: const Icon(Icons.pool),
+                  body: PlayDisplay(),
+                ),
+                // Match history
+                NavigationPage(
+                  title: 'Matches',
+                  icon: const Icon(Icons.history),
+                  body: PlayersDisplay(),
+                ),
+                // Players
+                NavigationPage(
+                  title: 'Players',
+                  icon: const Icon(Icons.people),
+                  body: PlayersDisplay(),
+                )
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

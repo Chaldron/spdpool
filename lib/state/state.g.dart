@@ -3,6 +3,54 @@
 part of 'state.dart';
 
 // **************************************************************************
+// CopyWithGenerator
+// **************************************************************************
+
+extension PlayerStateCopyWith on PlayerState {
+  PlayerState copyWith({
+    List<Player> players,
+  }) {
+    return PlayerState(
+      players: players ?? this.players,
+    );
+  }
+}
+
+extension MatchesStateCopyWith on MatchesState {
+  MatchesState copyWith({
+    List<Match> matches,
+  }) {
+    return MatchesState(
+      matches: matches ?? this.matches,
+    );
+  }
+}
+
+extension FirebaseStateCopyWith on FirebaseState {
+  FirebaseState copyWith({
+    List<StreamSubscription<dynamic>> subscriptions,
+  }) {
+    return FirebaseState(
+      subscriptions: subscriptions ?? this.subscriptions,
+    );
+  }
+}
+
+extension AppStateCopyWith on AppState {
+  AppState copyWith({
+    FirebaseState firebaseState,
+    MatchesState matchesState,
+    PlayerState playerState,
+  }) {
+    return AppState(
+      firebaseState: firebaseState ?? this.firebaseState,
+      matchesState: matchesState ?? this.matchesState,
+      playerState: playerState ?? this.playerState,
+    );
+  }
+}
+
+// **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
@@ -16,7 +64,6 @@ Map<String, dynamic> _$PlayerToJson(Player instance) => <String, dynamic>{
       'name': instance.name,
     };
 
-// ignore: unused_element
 Match _$MatchFromJson(Map<String, dynamic> json) {
   return Match(
     player1: Player.fromJson(json['player1'] as Map<String, dynamic>),
@@ -25,7 +72,6 @@ Match _$MatchFromJson(Map<String, dynamic> json) {
   );
 }
 
-// ignore: unused_element
 Map<String, dynamic> _$MatchToJson(Match instance) => <String, dynamic>{
       'player1': instance.player1,
       'player2': instance.player2,

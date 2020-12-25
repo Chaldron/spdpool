@@ -1,9 +1,10 @@
+import 'package:async_redux/async_redux.dart';
+
 /// players.dart
 /// This file contains the "Players" screen, where users
 /// can add, update, and view the different players.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_redux/flutter_redux.dart';
 import 'package:spd_pool/constants.dart';
 import 'package:spd_pool/state/actions.dart';
 import 'package:spd_pool/state/state.dart';
@@ -79,7 +80,7 @@ class _NewPlayerDialogState extends State<_NewPlayerDialog> {
     return StoreConnector<AppState, _NewPlayerDialogModel>(
       converter: (store) => _NewPlayerDialogModel(
         createPlayer: (player) => {
-          store.dispatch(RegisterPlayerAction(player)),
+          store.dispatch(RegisterPlayerAction(player: player)),
         },
       ),
       builder: (context, model) {
@@ -116,7 +117,7 @@ class _NewPlayerDialogState extends State<_NewPlayerDialog> {
                         validator: (value) {
                           return value.isEmpty ? 'Name cannot be empty.' : null;
                         },
-                        onSaved: (String value) {
+                        onChanged: (String value) {
                           currentNewPlayerName = value;
                         })
                   ],
@@ -155,36 +156,36 @@ class PlayersDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StoreConnector<AppState, _PlayersModel>(
-        converter: (store) => _PlayersModel(
-              players: store.state.players,
-              createPlayer: (player) => store.dispatch(
-                RegisterPlayerAction(player),
-              ),
-            ),
-        builder: (context, model) {
-          return Text(model.players.map((p) => p.ranking.toString()).join(","));
-          return Scaffold(
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                // Push the new player dialog screen as a full screen dialog
-                Navigator.of(context).push(
-                  MaterialPageRoute<Null>(
-                      builder: (BuildContext context) {
-                        return _NewPlayerDialog();
-                      },
-                      fullscreenDialog: true),
-                );
-              },
-              child: const Icon(Icons.add),
-            ),
-            body: ListView(
-              scrollDirection: Axis.vertical,
-              children: model.players
-                  .map((player) =>
-                      _PlayerCard(player, model.players.indexOf(player) + 1))
-                  .toList(),
-            ),
-          );
-        });
+      converter: (store) => _PlayersModel(
+        players: store.state.playerState.players,
+        createPlayer: (player) => store.dispatch(
+          RegisterPlayerAction(player: player),
+        ),
+      ),
+      builder: (context, model) {
+        return Scaffold(
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              // Push the new player dialog screen as a full screen dialog
+              Navigator.of(context).push(
+                MaterialPageRoute<Null>(
+                    builder: (BuildContext context) {
+                      return _NewPlayerDialog();
+                    },
+                    fullscreenDialog: true),
+              );
+            },
+            child: const Icon(Icons.add),
+          ),
+          body: ListView(
+            scrollDirection: Axis.vertical,
+            children: model.players
+                .map((player) =>
+                    _PlayerCard(player, model.players.indexOf(player) + 1))
+                .toList(),
+          ),
+        );
+      },
+    );
   }
 }

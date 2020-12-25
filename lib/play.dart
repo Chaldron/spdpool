@@ -1,5 +1,5 @@
+import 'package:async_redux/async_redux.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_redux/flutter_redux.dart';
 import 'package:spd_pool/constants.dart';
 import 'package:spd_pool/state/state.dart';
 
@@ -230,7 +230,8 @@ class PlayDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     print('building');
     return StoreConnector<AppState, _PlayModel>(
-      converter: (store) => _PlayModel(players: store.state.players),
+      converter: (store) =>
+          _PlayModel(players: store.state.playerState.players),
       builder: (context, model) {
         return _PlayersListDisplay(
           players: model.players,

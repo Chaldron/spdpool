@@ -1,27 +1,44 @@
 import 'dart:async';
 
+import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'state.g.dart';
 
-/// A representation of the app state.
-@immutable
-class AppState {
-  /// A list of players.
-  /// Guaranteed  to be sorted by ranking.
+@CopyWith()
+class PlayerState {
   final List<Player> players;
 
-  /// A list of matches.
+  const PlayerState({this.players = const []});
+}
+
+@CopyWith()
+class MatchesState {
   final List<Match> matches;
 
-  /// A list of Firestore subscriptions.
+  const MatchesState({this.matches = const []});
+}
+
+@CopyWith()
+class FirebaseState {
   final List<StreamSubscription> subscriptions;
 
+  const FirebaseState({this.subscriptions = const []});
+}
+
+/// A representation of the app state.
+@CopyWith()
+@immutable
+class AppState {
+  final PlayerState playerState;
+  final MatchesState matchesState;
+  final FirebaseState firebaseState;
+
   const AppState({
-    this.players = const [],
-    this.matches = const [],
-    this.subscriptions = const [],
+    this.playerState = const PlayerState(),
+    this.matchesState = const MatchesState(),
+    this.firebaseState = const FirebaseState(),
   });
 }
 
