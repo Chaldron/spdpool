@@ -53,7 +53,7 @@ class Player {
   @JsonKey(ignore: true)
   final double ranking;
 
-  const Player({this.name, this.ranking = 0});
+  const Player({this.name, this.ranking = 800});
 
   Map<String, dynamic> toJson() => _$PlayerToJson(this);
   factory Player.fromJson(Map<String, dynamic> json) => _$PlayerFromJson(json);
@@ -75,5 +75,17 @@ class Match {
   /// The winner of this match.
   final MatchWinner winner;
 
-  const Match({this.player1, this.player2, this.winner});
+  // The timestamp of this map.
+  DateTime timestamp;
+
+  Match({
+    this.player1,
+    this.player2,
+    this.winner,
+  }) {
+    timestamp = DateTime.now().toUtc();
+  }
+
+  Map<String, dynamic> toJson() => _$MatchToJson(this);
+  factory Match.fromJson(Map<String, dynamic> json) => _$MatchFromJson(json);
 }

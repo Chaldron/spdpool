@@ -1,7 +1,10 @@
 import 'package:async_redux/async_redux.dart';
 import 'package:flutter/material.dart';
 import 'package:spd_pool/constants.dart';
+import 'package:spd_pool/state/actions.dart';
 import 'package:spd_pool/state/state.dart';
+
+import 'main.dart';
 
 /// A single Player's card display.
 class _PlayerCard extends StatelessWidget {
@@ -147,9 +150,10 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
     final Function onStartPressed =
         selectedIndexLeft >= 0 && selectedIndexRight >= 0
             ? () {
-                print('start');
+                store.dispatch(AddMatchAction());
               }
             : null;
+
     return Scaffold(
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
