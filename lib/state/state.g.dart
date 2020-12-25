@@ -16,6 +16,7 @@ Map<String, dynamic> _$PlayerToJson(Player instance) => <String, dynamic>{
       'name': instance.name,
     };
 
+// ignore: unused_element
 Match _$MatchFromJson(Map<String, dynamic> json) {
   return Match(
     player1: Player.fromJson(json['player1'] as Map<String, dynamic>),
@@ -24,6 +25,7 @@ Match _$MatchFromJson(Map<String, dynamic> json) {
   );
 }
 
+// ignore: unused_element
 Map<String, dynamic> _$MatchToJson(Match instance) => <String, dynamic>{
       'player1': instance.player1,
       'player2': instance.player2,

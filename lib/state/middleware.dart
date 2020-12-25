@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spd_pool/state/actions.dart';
 import 'package:redux/redux.dart';
 import 'package:spd_pool/state/state.dart';
-import 'package:spd_pool/constants.dart' as Constants;
+import 'package:spd_pool/constants.dart' as constants;
 
 /// Creates the root middleware, combining all other middleware.
 List<Middleware<AppState>> rootMiddleware() {
@@ -20,8 +20,9 @@ List<Middleware<AppState>> rootMiddleware() {
 Middleware<AppState> createPlayer() {
   return (Store<AppState> store, action, NextDispatcher next) async {
     // Add a new player to the Firestore collection.
-    Firestore.instance
-        .collection(Constants.FIREBASE_PLAYERS_COLLECTION)
+    print("adding player to firebase");
+    await Firestore.instance
+        .collection(constants.FIREBASE_PLAYERS_COLLECTION)
         .add(action._player.toJson());
     // Recompute player rankings.
     store.dispatch(ComputePlayerRankingsAction(store.state.matches));
@@ -36,8 +37,9 @@ Middleware<AppState> createPlayersSubscription() {
   return (Store<AppState> store, action, NextDispatcher next) async {
     // Subscribe to the players collection, setting the local copy of players each time a new snapshot is fired.
     // ignore: cancel_subscriptions
+    print("creating subscription");
     final subscription = Firestore.instance
-        .collection(Constants.FIREBASE_PLAYERS_COLLECTION)
+        .collection(constants.FIREBASE_PLAYERS_COLLECTION)
         .snapshots()
         .listen((snapshot) {
       // Map the collection's documents to Player objects.
@@ -58,7 +60,7 @@ Middleware<AppState> createPlayersSubscription() {
 Middleware<AppState> cancelSubscriptions() {
   return (Store<AppState> store, action, NextDispatcher next) async {
     // Cancel every Firestore subscription.
-    print("cancelling");
+    print('cancelling');
     store.state.subscriptions.forEach((subscription) => subscription.cancel());
     next(action);
   };

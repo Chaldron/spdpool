@@ -25,17 +25,20 @@ List<Player> Function(List<Player> players, dynamic action) _playerReducer() {
 
 /// Reducer to set the list of players.
 List<Player> _setPlayersReducer(List<Player> players, SetPlayersAction action) {
+  print("setting players");
   return action.players;
 }
 
 /// Reducer to compute player rankings.
 List<Player> _computePlayerRankings(
     List<Player> players, ComputePlayerRankingsAction action) {
-  List<Player> rankedPlayers = List.from(players
-      .map((player) => Player(
-          name: player.name, ranking: new Random().nextInt(3000).toDouble()))
+  final rankedPlayers = List.from(players
+      .map<Player>((player) =>
+          Player(name: player.name, ranking: Random().nextInt(3000).toDouble()))
       .toList());
   rankedPlayers.sort((p1, p2) => p2.ranking.compareTo(p1.ranking));
+  print("computing ranks");
+  print(rankedPlayers[0].ranking);
   return rankedPlayers;
 }
 

@@ -36,7 +36,7 @@ class Player {
   @JsonKey(ignore: true)
   final double ranking;
 
-  const Player({this.name, this.ranking});
+  const Player({this.name, this.ranking = 0});
 
   Map<String, dynamic> toJson() => _$PlayerToJson(this);
   factory Player.fromJson(Map<String, dynamic> json) => _$PlayerFromJson(json);

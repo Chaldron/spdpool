@@ -11,7 +11,7 @@ import 'package:spd_pool/state/state.dart';
 const APP_TITLE = 'SPD Pool';
 
 void main() {
-  runApp(new App());
+  runApp(App());
 }
 
 /// Represents a single navigation page for our tabbed bottom-bar layout.
@@ -35,16 +35,16 @@ class NavigationPage {
 class _AppState extends State<App> {
   /// A redux store with the appropiate reducer, initial state, and middleware.
   final store = Store<AppState>(rootReducer,
-      initialState: AppState(), middleware: rootMiddleware());
+      initialState: const AppState(), middleware: rootMiddleware());
 
   @override
   Widget build(BuildContext context) {
-    return new StoreProvider(
+    return StoreProvider(
       store: store,
       child: MaterialApp(
         title: APP_TITLE,
         theme: ThemeData.dark(),
-        home: new StoreBuilder(
+        home: StoreBuilder(
           // Setup subscriptions to Firebase on initialization
           onInit: (store) => store.dispatch(RequestSubscriptionsAction()),
           // Cancel subscriptions to Firebase when closing
@@ -57,19 +57,19 @@ class _AppState extends State<App> {
                 // New match screen
                 NavigationPage(
                   title: 'Play',
-                  icon: Icon(Icons.pool),
+                  icon: const Icon(Icons.pool),
                   body: PlayDisplay(),
                 ),
                 // Match history
                 NavigationPage(
                   title: 'Matches',
-                  icon: Icon(Icons.history),
+                  icon: const Icon(Icons.history),
                   body: PlayersDisplay(),
                 ),
                 // Players
                 NavigationPage(
                   title: 'Players',
-                  icon: Icon(Icons.people),
+                  icon: const Icon(Icons.people),
                   body: PlayersDisplay(),
                 )
               ],
@@ -126,7 +126,7 @@ class _HomeState extends State<Home> {
         title: Text(title),
       ),
       body: Container(
-          padding: EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(8.0),
           // Show the currently selected child
           child: children[_currentPageIndex].body),
       bottomNavigationBar: BottomNavigationBar(
@@ -135,7 +135,7 @@ class _HomeState extends State<Home> {
           onTap: (int index) => setState(() => _currentPageIndex = index),
           // Show icons for each of the children
           items: children.map((child) {
-            var bottomNavigationBarItem =
+            final bottomNavigationBarItem =
                 BottomNavigationBarItem(label: child.title, icon: child.icon);
             return bottomNavigationBarItem;
           }).toList()),

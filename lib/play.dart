@@ -23,20 +23,20 @@ class _PlayerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Use a grey text color when this player cannot be selected
-    final Color textColor = onTap != null ? Colors.white : Colors.grey;
+    final textColor = onTap != null ? Colors.white : Colors.grey;
     // Show all attributes on large screens, and only name on small ones
     // This should be updated at some point to be less hacky
-    final MediaQueryData queryData = MediaQuery.of(context);
-    final bool largeScreen = queryData.size.width > 800;
+    final queryData = MediaQuery.of(context);
+    final largeScreen = queryData.size.width > 800;
     // The list of attributes
-    final List<Widget> attributes = [
+    final attributes = [
       // Relative rank
       largeScreen
           ? Text(
               relativeRank.toString(),
               style: TextStyle(fontSize: 30.0, color: textColor),
             )
-          : Spacer(),
+          : const Spacer(),
       // Player name
       Text(
         player.name,
@@ -48,20 +48,20 @@ class _PlayerCard extends StatelessWidget {
               player.ranking.toInt().toString(),
               style: TextStyle(fontSize: 30.0, color: textColor),
             )
-          : Spacer()
+          : const Spacer()
     ];
 
     return Container(
       height: 85,
       child: Padding(
-        padding: EdgeInsets.all(4.0),
+        padding: const EdgeInsets.all(4.0),
         child: Card(
           // Grey card
           color: ILLINOIS_GREY,
           shape: RoundedRectangleBorder(
             // White border when this player is selected
             side: isSelected
-                ? BorderSide(color: Colors.white, width: 6.00)
+                ? const BorderSide(color: Colors.white, width: 6.00)
                 : BorderSide.none,
             borderRadius: BorderRadius.circular(8.0),
           ),
@@ -74,7 +74,7 @@ class _PlayerCard extends StatelessWidget {
               onTap: onTap,
               child: Padding(
                 // Pad text within the card
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: attributes,
@@ -105,7 +105,7 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
   Widget Function(BuildContext, int) listItemBuilderBuilder(bool left) {
     return (BuildContext context, int index) {
       // We should disable a player card if the corresponding card on the other side is selected.
-      bool disabled = !((left && index != selectedIndexRight) ||
+      final disabled = !((left && index != selectedIndexRight) ||
           (!left && index != selectedIndexLeft));
       return _PlayerCard(
         player: players[index],
@@ -121,15 +121,17 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
                   // Update the corresponding index.
                   // Allow unselection of player cards.
                   if (left) {
-                    if (selectedIndexLeft == index)
+                    if (selectedIndexLeft == index) {
                       selectedIndexLeft = -1;
-                    else
+                    } else {
                       selectedIndexLeft = index;
+                    }
                   } else {
-                    if (selectedIndexRight == index)
+                    if (selectedIndexRight == index) {
                       selectedIndexRight = -1;
-                    else
+                    } else {
                       selectedIndexRight = index;
+                    }
                   }
                 });
               }
@@ -142,11 +144,12 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
   Widget build(BuildContext context) {
     /// The onTap handler for the start button.
     /// Should be null if two valid players haven't been selected.
-    Function onStartPressed = selectedIndexLeft >= 0 && selectedIndexRight >= 0
-        ? () {
-            print("start");
-          }
-        : null;
+    final Function onStartPressed =
+        selectedIndexLeft >= 0 && selectedIndexRight >= 0
+            ? () {
+                print('start');
+              }
+            : null;
     return Scaffold(
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -184,14 +187,14 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
           // Start button
           Container(
               height: 70,
-              padding: EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
               child: RaisedButton(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 onPressed: onStartPressed,
-                child: Text(
-                  "Start",
+                child: const Text(
+                  'Start',
                   style: TextStyle(fontSize: 22.0),
                 ),
               )),
@@ -225,11 +228,14 @@ class _PlayModel {
 class PlayDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    print("building");
+    print('building');
     return StoreConnector<AppState, _PlayModel>(
       converter: (store) => _PlayModel(players: store.state.players),
       builder: (context, model) {
-        return _PlayersListDisplay(players: model.players, key: UniqueKey());
+        return _PlayersListDisplay(
+          players: model.players,
+          key: ObjectKey(model.players),
+        );
       },
     );
   }
