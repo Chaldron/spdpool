@@ -1,7 +1,4 @@
-// -- Firebase
 import 'dart:ui';
-
-const FIREBASE_PLAYERS_COLLECTION = 'players';
 
 // -- Colors
 const ILLINOIS_GREY = Color(0xFF5E6669);

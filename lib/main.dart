@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:async_redux/async_redux.dart';
+import 'package:spd_pool/matches.dart';
 
 import 'package:spd_pool/play.dart';
 import 'package:spd_pool/players.dart';
@@ -12,14 +13,14 @@ Store<AppState> store;
 void main() {
   // Initialize the redux store.
   store = Store<AppState>(initialState: const AppState());
-  // Start the ap.
+  // Start the app.
   runApp(App());
 }
 
 /// Represents a single navigation page for our tabbed bottom-bar layout.
 /// Contains a title, icon, and associated widget.
 @immutable
-class NavigationPage {
+class _NavigationPage {
   /// The title of this page.
   final String title;
 
@@ -29,7 +30,7 @@ class NavigationPage {
   /// The actual contents of this page.
   final Widget body;
 
-  const NavigationPage({this.title, this.icon, this.body});
+  const _NavigationPage({this.title, this.icon, this.body});
 }
 
 /// Represents the state of the main app body.
@@ -40,10 +41,10 @@ class _HomeState extends State<Home> {
   final String title;
 
   /// Child navigation pages
-  final List<NavigationPage> children;
+  final List<_NavigationPage> children;
 
   /// The currently selected page.
-  int _currentPageIndex = 0;
+  int currentPageIndex = 0;
 
   _HomeState({this.children, this.title});
 
@@ -55,30 +56,28 @@ class _HomeState extends State<Home> {
       ),
       body: Container(
           padding: const EdgeInsets.all(8.0),
-          // Show the currently selected child
-          child: children[_currentPageIndex].body),
+          child: children[currentPageIndex].body),
       bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentPageIndex,
-          // Update the current index on tap
-          onTap: (int index) => setState(() => _currentPageIndex = index),
-          // Show icons for each of the children
-          items: children.map((child) {
-            final bottomNavigationBarItem =
-                BottomNavigationBarItem(label: child.title, icon: child.icon);
-            return bottomNavigationBarItem;
-          }).toList()),
+        currentIndex: currentPageIndex,
+        // Update the current index on tap
+        onTap: (int index) => setState(() => currentPageIndex = index),
+        items: children
+            .map((child) =>
+                BottomNavigationBarItem(label: child.title, icon: child.icon))
+            .toList(),
+      ),
     );
   }
 }
 
 /// A main app body widget.
-/// Retains a set of children pages (widgets)
+/// Retains a set of children navigation pages.
 class Home extends StatefulWidget {
   /// Title of the main app body
   final String title;
 
   /// Child navigation pages
-  final List<NavigationPage> children;
+  final List<_NavigationPage> children;
 
   const Home({Key key, this.title, this.children}) : super(key: key);
 
@@ -116,19 +115,19 @@ class App extends StatelessWidget {
               title: APP_TITLE,
               children: [
                 // New match screen
-                NavigationPage(
+                _NavigationPage(
                   title: 'Play',
                   icon: const Icon(Icons.pool),
                   body: PlayDisplay(),
                 ),
                 // Match history
-                NavigationPage(
+                _NavigationPage(
                   title: 'Matches',
                   icon: const Icon(Icons.history),
-                  body: PlayersDisplay(),
+                  body: MatchesDisplay(),
                 ),
                 // Players
-                NavigationPage(
+                _NavigationPage(
                   title: 'Players',
                   icon: const Icon(Icons.people),
                   body: PlayersDisplay(),

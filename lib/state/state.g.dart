@@ -69,14 +69,15 @@ Match _$MatchFromJson(Map<String, dynamic> json) {
     player1: Player.fromJson(json['player1'] as Map<String, dynamic>),
     player2: Player.fromJson(json['player2'] as Map<String, dynamic>),
     winner: _$enumDecode(_$MatchWinnerEnumMap, json['winner']),
-  )..timestamp = DateTime.parse(json['timestamp'] as String);
+    timestamp: Match._firebaseDateDeserializer(json['timestamp'] as Timestamp),
+  );
 }
 
 Map<String, dynamic> _$MatchToJson(Match instance) => <String, dynamic>{
-      'player1': instance.player1,
-      'player2': instance.player2,
+      'player1': instance.player1.toJson(),
+      'player2': instance.player2.toJson(),
       'winner': _$MatchWinnerEnumMap[instance.winner],
-      'timestamp': instance.timestamp.toIso8601String(),
+      'timestamp': Match._firebaseDateSerializer(instance.timestamp),
     };
 
 T _$enumDecode<T>(

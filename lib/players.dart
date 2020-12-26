@@ -1,15 +1,14 @@
-import 'package:async_redux/async_redux.dart';
-
 /// players.dart
 /// This file contains the "Players" screen, where users
 /// can add, update, and view the different players.
 
 import 'package:flutter/material.dart';
+import 'package:async_redux/async_redux.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:spd_pool/constants.dart';
 import 'package:spd_pool/state/actions.dart';
 import 'package:spd_pool/state/state.dart';
 
-/// A single Player's card display.
 class _PlayerCard extends StatelessWidget {
   /// The player this card is displaying.
   final Player player;
@@ -17,41 +16,71 @@ class _PlayerCard extends StatelessWidget {
   /// This player's relative rank.
   final int relativeRank;
 
-  _PlayerCard(this.player, this.relativeRank);
+  _PlayerCard({this.player, this.relativeRank});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
+      // Minimum card height: 100px
+      constraints: const BoxConstraints(minHeight: 100),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(4.0),
         child: Card(
           color: ILLINOIS_GREY,
           shape: RoundedRectangleBorder(
-            side: BorderSide.none,
             borderRadius: BorderRadius.circular(8.0),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Relative rank
-                Text(
-                  relativeRank.toString(),
-                  style: const TextStyle(fontSize: 30.0),
+          // Wrap in material to use InkWell effects
+          child: Material(
+            // Don't show any color overlays
+            type: MaterialType.transparency,
+            child: InkWell(
+              // Pass onTap functionality from state
+              child: Padding(
+                // Pad text within the card
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Relative ranking
+                    Expanded(
+                      flex: 2,
+                      child: AutoSizeText(
+                        relativeRank.toString(),
+                        style: const TextStyle(fontSize: 30.0),
+                        textAlign: TextAlign.left,
+                        maxLines: 1,
+                        minFontSize: 15,
+                        maxFontSize: 30,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 4,
+                      child: AutoSizeText(
+                        player.name,
+                        style: const TextStyle(fontSize: 30.0),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        minFontSize: 15,
+                        maxFontSize: 30,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Actual ranking
+                    Expanded(
+                      flex: 2,
+                      child: AutoSizeText(
+                        player.rating.toInt().toString(),
+                        style: const TextStyle(fontSize: 30.0),
+                        textAlign: TextAlign.right,
+                        maxLines: 1,
+                        minFontSize: 15,
+                        maxFontSize: 30,
+                      ),
+                    )
+                  ],
                 ),
-                // Player name
-                Text(
-                  player.name,
-                  style: const TextStyle(fontSize: 30.0),
-                ),
-                // Actual ranking
-                Text(
-                  player.ranking.toInt().toString(),
-                  style: const TextStyle(fontSize: 30.0),
-                )
-              ],
+              ),
             ),
           ),
         ),
@@ -180,8 +209,11 @@ class PlayersDisplay extends StatelessWidget {
           body: ListView(
             scrollDirection: Axis.vertical,
             children: model.players
-                .map((player) =>
-                    _PlayerCard(player, model.players.indexOf(player) + 1))
+                .map(
+                  (player) => _PlayerCard(
+                      player: player,
+                      relativeRank: model.players.indexOf(player) + 1),
+                )
                 .toList(),
           ),
         );

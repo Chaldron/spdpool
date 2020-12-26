@@ -1,8 +1,10 @@
 import 'package:async_redux/async_redux.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:spd_pool/constants.dart';
 import 'package:spd_pool/state/actions.dart';
 import 'package:spd_pool/state/state.dart';
+import 'package:spd_pool/utils/elo.dart';
 
 import 'main.dart';
 
@@ -27,56 +29,78 @@ class _PlayerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Use a grey text color when this player cannot be selected
     final textColor = onTap != null ? Colors.white : Colors.grey;
+
     // Show all attributes on large screens, and only name on small ones
     // This should be updated at some point to be less hacky
     final queryData = MediaQuery.of(context);
     final largeScreen = queryData.size.width > 800;
-    // The list of attributes
-    final attributes = [
-      // Relative rank
-      largeScreen
-          ? Text(
-              relativeRank.toString(),
-              style: TextStyle(fontSize: 30.0, color: textColor),
-            )
-          : const Spacer(),
+
+    // The list of attributes to display
+    var attributes = [
       // Player name
-      Text(
-        player.name,
-        style: TextStyle(fontSize: 30.0, color: textColor),
+      Expanded(
+        flex: 4,
+        child: AutoSizeText(
+          player.name,
+          style: TextStyle(fontSize: 30.0, color: textColor),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          minFontSize: 15,
+          maxFontSize: 30,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      // Actual rank
-      largeScreen
-          ? Text(
-              player.ranking.toInt().toString(),
-              style: TextStyle(fontSize: 30.0, color: textColor),
-            )
-          : const Spacer()
     ];
 
+    // Add relative/actual rank if the screen is big enough
+    if (largeScreen) {
+      attributes = [
+        // Relative ranking
+        Expanded(
+          flex: 2,
+          child: AutoSizeText(
+            relativeRank.toString(),
+            style: TextStyle(fontSize: 30.0, color: textColor),
+            textAlign: TextAlign.left,
+            maxLines: 1,
+            minFontSize: 15,
+            maxFontSize: 30,
+          ),
+        ),
+        ...attributes,
+        // Actual ranking
+        Expanded(
+          flex: 2,
+          child: AutoSizeText(
+            player.rating.toInt().toString(),
+            style: TextStyle(fontSize: 30.0, color: textColor),
+            textAlign: TextAlign.right,
+            maxLines: 1,
+            minFontSize: 15,
+            maxFontSize: 30,
+          ),
+        )
+      ];
+    }
+
     return Container(
-      height: 85,
+      constraints: const BoxConstraints(minHeight: 100),
       child: Padding(
         padding: const EdgeInsets.all(4.0),
         child: Card(
-          // Grey card
           color: ILLINOIS_GREY,
           shape: RoundedRectangleBorder(
-            // White border when this player is selected
+            // Show white border when player is selected
             side: isSelected
                 ? const BorderSide(color: Colors.white, width: 6.00)
                 : BorderSide.none,
             borderRadius: BorderRadius.circular(8.0),
           ),
-          // Wrap in material to use InkWell effects
           child: Material(
-            // Don't show any color overlays
             type: MaterialType.transparency,
             child: InkWell(
-              // Pass onTap functionality from state
               onTap: onTap,
               child: Padding(
-                // Pad text within the card
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -150,9 +174,19 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
     final Function onStartPressed =
         selectedIndexLeft >= 0 && selectedIndexRight >= 0
             ? () {
-                store.dispatch(AddMatchAction());
+                store.dispatch(AddMatchAction(
+                  player1: players[selectedIndexLeft],
+                  player2: players[selectedIndexRight],
+                  winner: MatchWinner.Player1,
+                ));
               }
             : null;
+
+    /// Compute the win chance for both of the selected players so we can show the bars
+    final leftWinChance = selectedIndexLeft >= 0 && selectedIndexRight >= 0
+        ? winChanceForPlayer(
+            players[selectedIndexLeft], players[selectedIndexRight])
+        : 0.5;
 
     return Scaffold(
       body: Column(
@@ -160,7 +194,6 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Expanded(
-            // The row of list views
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -188,20 +221,74 @@ class _PlayersListDisplayState extends State<_PlayersListDisplay> {
               ],
             ),
           ),
+          // Chance bar separator
+          Container(
+            height: 40,
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(width: 8, color: Colors.white),
+              ),
+            ),
+            // Chance bars
+            child: Row(
+              children: [
+                // Left
+                Expanded(
+                  flex: (leftWinChance * 100).toInt(),
+                  child: Stack(
+                    children: [
+                      Container(color: ILLINOIS_ORANGE),
+                      Align(
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${(100 * leftWinChance).toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            fontSize: 24.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Right
+                Expanded(
+                  flex: (100 - 100 * leftWinChance).toInt(),
+                  child: Stack(
+                    children: [
+                      Container(color: ILLINOIS_BLUE),
+                      Align(
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${(100 * (1 - leftWinChance)).toStringAsFixed(0)}%',
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 24.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
           // Start button
           Container(
-              height: 70,
-              padding: const EdgeInsets.all(8.0),
-              child: RaisedButton(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                onPressed: onStartPressed,
-                child: const Text(
-                  'Start',
-                  style: TextStyle(fontSize: 22.0),
-                ),
-              )),
+            height: 70,
+            padding: const EdgeInsets.all(8.0),
+            child: RaisedButton(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              onPressed: onStartPressed,
+              child: const Text(
+                'Start',
+                style: TextStyle(fontSize: 22.0),
+              ),
+            ),
+          ),
         ],
       ),
     );

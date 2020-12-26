@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
 
 import 'package:async_redux/async_redux.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spd_pool/state/state.dart';
+import 'package:spd_pool/utils/elo.dart';
 
 const String _PLAYERS_COLLECTION = 'players';
 const String _MATCHES_COLLECTION = 'matches';
@@ -57,65 +56,77 @@ class SetPlayersAction extends ReduxAction<AppState> {
 class ComputePlayerRankingsAction extends ReduxAction<AppState> {
   @override
   AppState reduce() {
-    var playerMap = Map<String, double>();
-    for (Player p in store.state.playerState.players) {
-      playerMap.putIfAbsent(p.name, () => p.ranking);
+    // Initialize a map of ratings to the starting rating.
+    final playerMap = <String, double>{};
+    for (final p in store.state.playerState.players) {
+      playerMap.putIfAbsent(p.name, () => ELO_STARTING_RATING);
     }
-    for (final Match m in store.state.matchesState.matches) {
-      double rating1 = playerMap[m.player1.name];
-      double rating2 = playerMap[m.player2.name];
 
-      double P1 = (1.0 / (1.0 + pow(10, ((rating1 - rating2) / 400))));
-      double P2 = (1.0 / (1.0 + pow(10, ((rating2 - rating1) / 400))));
+    // Initialize the list of updated matches (with proper player pointers)
+    final matches = <Match>[];
 
-      double p1score = m.winner == MatchWinner.Player1 ? 1 : 0;
-      double p2score = m.winner == MatchWinner.Player2 ? 1 : 0;
+    for (final m in store.state.matchesState.matches) {
+      // Get existing ratings.
+      final ratingP1 = playerMap[m.player1.name];
+      final ratingP2 = playerMap[m.player2.name];
 
-      double k = 10;
-      rating1 = rating1 + k * (p1score - P1);
-      rating2 = rating2 + k * (p2score - P2);
+      // Compute new ratings from this match
+      final newRatings = computeNewPlayerRankings(
+        playerMap[m.player1.name],
+        playerMap[m.player2.name],
+        m.winner == MatchWinner.Player1,
+      );
 
-      playerMap[m.player1.name] = rating1;
-      playerMap[m.player2.name] = rating2;
+      // Insert new rating back into the map.
+      playerMap[m.player1.name] = newRatings[0];
+      playerMap[m.player2.name] = newRatings[1];
+
+      // Append a new match to the list with two players and their rating *after* the match.
+      matches.add(
+        Match(
+          player1: Player(name: m.player1.name, rating: ratingP1),
+          player2: Player(name: m.player2.name, rating: ratingP2),
+          winner: m.winner,
+          timestamp: m.timestamp,
+          eloDelta1: newRatings[0] - ratingP1,
+          eloDelta2: newRatings[1] - ratingP2,
+        ),
+      );
     }
-    List<Player> rankedPlayers = playerMap.entries
-        .map((entry) => Player(name: entry.key, ranking: entry.value))
+
+    // Create the final list of ranked players, and sort them
+    final rankedPlayers = playerMap.entries
+        .map((entry) => Player(name: entry.key, rating: entry.value))
         .toList();
-    rankedPlayers.sort((p1, p2) => p2.ranking.compareTo(p1.ranking));
+    rankedPlayers.sort((p1, p2) => p2.rating.compareTo(p1.rating));
+
     return state.copyWith(
       playerState: state.playerState.copyWith(
         players: rankedPlayers,
+      ),
+      matchesState: state.matchesState.copyWith(
+        matches: matches,
       ),
     );
-    /*final rankedPlayers = List.from(state.playerState.players)
-        .map<Player>((player) => Player(
-            name: player.name, ranking: Random().nextInt(3000).toDouble()))
-        .toList();
-    rankedPlayers.sort((p1, p2) => p2.ranking.compareTo(p1.ranking));
-    return state.copyWith(
-      playerState: state.playerState.copyWith(
-        players: rankedPlayers,
-      ),
-    );*/
-    return null;
   }
 }
 
 // -- Match Actions
 class AddMatchAction extends ReduxAction<AppState> {
+  final Player player1, player2;
+  final MatchWinner winner;
+
+  AddMatchAction({this.player1, this.player2, this.winner});
+
   @override
   AppState reduce() {
-    int i1 = Random().nextInt(store.state.playerState.players.length);
-    int i2 = Random().nextInt(store.state.playerState.players.length);
-    while (i2 == i1)
-      i2 = Random().nextInt(store.state.playerState.players.length);
-    Player p1 = store.state.playerState.players[i1];
-    Player p2 = store.state.playerState.players[i2];
-    final match = Match(player1: p1, player2: p2, winner: MatchWinner.Player1);
-    Firestore.instance
-        .collection(_MATCHES_COLLECTION)
-        .add(json.decode(json.encode(match)));
-    print("added match");
+    final match = Match(
+        player1: player1,
+        player2: player2,
+        winner: winner,
+        timestamp: DateTime.now().toUtc());
+    Firestore.instance.collection(_MATCHES_COLLECTION).add(match.toJson());
+    print('added match');
     return null;
   }
 }
@@ -126,10 +137,16 @@ class SetMatchesAction extends ReduxAction<AppState> {
   SetMatchesAction({this.matches});
   @override
   AppState reduce() {
+    print('setting matches ' + matches.length.toString());
     matches.sort((m1, m2) => m1.timestamp.compareTo(m2.timestamp));
     return store.state.copyWith(
       matchesState: store.state.matchesState.copyWith(matches: matches),
     );
+  }
+
+  @override
+  void after() {
+    store.dispatch(ComputePlayerRankingsAction());
   }
 }
 
@@ -153,7 +170,6 @@ class RequestSubscriptionsAction extends ReduxAction<AppState> {
           .toList();
       // Set our list of players and computer rankings
       store.dispatch(SetPlayersAction(players: players));
-      store.dispatch(ComputePlayerRankingsAction());
     });
     // Create the matches subscription
     _matchesSubscription = Firestore.instance
@@ -164,7 +180,6 @@ class RequestSubscriptionsAction extends ReduxAction<AppState> {
           .map((document) => Match.fromJson(document.data))
           .toList();
       store.dispatch(SetMatchesAction(matches: matches));
-      store.dispatch(ComputePlayerRankingsAction());
     });
 
     return null;
@@ -176,6 +191,7 @@ class CancelSubscriptionsAction extends ReduxAction<AppState> {
   @override
   AppState reduce() {
     RequestSubscriptionsAction._playersSubscription?.cancel();
+    RequestSubscriptionsAction._matchesSubscription?.cancel();
     return null;
   }
 }
